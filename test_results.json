@@ -1,0 +1,385 @@
+[
+  {
+    "test_id": "TC001",
+    "passed": false,
+    "actual": {
+      "final_answer": "Không có tổ hợp sản phẩm nào phù hợp vì giá của chiếc laptop rẻ nhất (Acer Aspire 3 V1: 6,343,530đ) đã vượt quá ngân sách 5 triệu đồng của bạn.",
+      "tool_calls": [
+        {
+          "tool": "get_products_by_category",
+          "args": "laptop"
+        }
+      ],
+      "steps": 2,
+      "total_time_ms": 14898,
+      "termination_reason": "success"
+    },
+    "expected": {
+      "feasible": false,
+      "reason": "Không có laptop nào trong danh mục có giá đủ thấp để kết hợp đủ 3 loại trong 5 triệu VNĐ.",
+      "suggestion": "Agent nên đề xuất người dùng nâng ngân sách hoặc chỉ mua mouse + keyboard trong tầm giá, hoặc tìm laptop giá rẻ nhất ngoài danh sách."
+    },
+    "criteria_check": []
+  },
+  {
+    "test_id": "TC002",
+    "passed": false,
+    "actual": {
+      "final_answer": "Tôi đã tìm thấy combo bàn phím và chuột có hiệu năng tốt nhất trong ngân sách 5 triệu đồng của bạn:\n- Bàn phím: Keychron K2 2024 (K0025) - Giá: 3,105,940đ - Hiệu năng: 53\n- Chuột: Logitech M331 2024 (M0014) - Giá: 520,320đ - Hiệu năng: 44\nTổng tiền: 3,626,260đ\nTổng hiệu năng: 97\nTrạng thái: Tất cả sản phẩm đều còn hàng.",
+      "tool_calls": [
+        {
+          "tool": "get_products_by_category",
+          "args": "laptop"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "keyboard"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "mouse"
+        },
+        {
+          "tool": "validate_combination",
+          "args": "K0025, M0014"
+        }
+      ],
+      "steps": 5,
+      "total_time_ms": 75002,
+      "termination_reason": "success"
+    },
+    "expected": {
+      "feasible": true,
+      "recommended_combo": [
+        {
+          "id": "K0025",
+          "name": "Keychron K2 2024",
+          "price_after_discount": 3105940,
+          "performance_score": 53
+        },
+        {
+          "id": "M0014",
+          "name": "Logitech M331 2024",
+          "price_after_discount": 520320,
+          "performance_score": 44
+        }
+      ],
+      "total_cost": 3626260,
+      "remaining_budget": 1373740,
+      "total_performance_score": 97
+    },
+    "criteria_check": []
+  },
+  {
+    "test_id": "TC003",
+    "passed": false,
+    "actual": {
+      "final_answer": "Combo san pham toi uu nhat trong ngan sach 15 trieu dong:\n1. Laptop: HP 245 Office (L0013) - Gia: 10,047,720đ - Hieu nang: 93\n2. Ban phim: Keychron K2 2024 (K0025) - Gia: 3,105,940đ - Hieu nang: 53\n3. Chuot: Logitech M331 2024 (M0014) - Gia: 520,320đ - Hieu nang: 44\n\nTong tien: 13,673,980đ\nTong hieu nang: 190\nTrang thai kho: Tat ca san pham deu con hang.",
+      "tool_calls": [
+        {
+          "tool": "get_products_by_category",
+          "args": "laptop"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "keyboard"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "mouse"
+        },
+        {
+          "tool": "validate_combination",
+          "args": "L0013, K0025, M0014"
+        }
+      ],
+      "steps": 5,
+      "total_time_ms": 75030,
+      "termination_reason": "success"
+    },
+    "expected": {
+      "feasible": true,
+      "recommended_combo": [
+        {
+          "id": "L0028",
+          "name": "Asus Vivobook Pro",
+          "price_after_discount": 9629360,
+          "performance_score": 69
+        },
+        {
+          "id": "K0025",
+          "name": "Keychron K2 2024",
+          "price_after_discount": 3105940,
+          "performance_score": 53
+        },
+        {
+          "id": "M0014",
+          "name": "Logitech M331 2024",
+          "price_after_discount": 520320,
+          "performance_score": 44
+        }
+      ],
+      "total_cost": 13255620,
+      "remaining_budget": 1744380,
+      "total_performance_score": 166
+    },
+    "criteria_check": []
+  },
+  {
+    "test_id": "TC004",
+    "passed": false,
+    "actual": {
+      "final_answer": "Rất tiếc, tôi không thể tìm thấy combo phù hợp vì sản phẩm HP 245 Gaming hiện đang hết hàng (Stock: 0).",
+      "tool_calls": [
+        {
+          "tool": "get_products_by_category",
+          "args": "laptop"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "keyboard"
+        }
+      ],
+      "steps": 2,
+      "total_time_ms": 36140,
+      "termination_reason": "success"
+    },
+    "expected": {
+      "feasible": false,
+      "out_of_stock_items": [
+        "L0006 – HP 245 Gaming"
+      ],
+      "fallback_recommendation": {
+        "combo": [
+          {
+            "id": "L0011",
+            "name": "HP 245 Lite",
+            "note": "Thay thế gần nhất còn hàng, score=67"
+          },
+          {
+            "id": "K0012",
+            "name": "Mechanical Red Switch SE",
+            "price_after_discount": 1026720
+          },
+          {
+            "id": "M0014",
+            "name": "Logitech M331 2024",
+            "price_after_discount": 520320
+          }
+        ]
+      }
+    },
+    "criteria_check": []
+  },
+  {
+    "test_id": "TC005",
+    "passed": false,
+    "actual": {
+      "final_answer": "Rất tiếc, bạn không thể mua combo gồm laptop, bàn phím và chuột với ngân sách 1.000.000 đồng vì sản phẩm laptop rẻ nhất hiện có là Acer Aspire 3 V1 với giá 6.343.530 đồng, đã vượt quá ngân sách của bạn.",
+      "tool_calls": [
+        {
+          "tool": "get_products_by_category",
+          "args": "laptop"
+        }
+      ],
+      "steps": 2,
+      "total_time_ms": 20556,
+      "termination_reason": "success"
+    },
+    "expected": {
+      "feasible": false,
+      "reason": "Laptop rẻ nhất hiện có (sau giảm giá) là 6.343.530 VNĐ, vượt toàn bộ ngân sách 1.000.000 VNĐ.",
+      "partial_plan": {
+        "affordable_combo": [
+          {
+            "id": "M0008",
+            "name": "Logitech M170 Gaming",
+            "price_after_discount": 164160
+          },
+          {
+            "id": "K0009",
+            "name": "Logitech K120 V1",
+            "price_after_discount": 287100
+          }
+        ],
+        "total": 451260,
+        "missing": [
+          "laptop"
+        ]
+      }
+    },
+    "criteria_check": []
+  },
+  {
+    "test_id": "TC006",
+    "passed": false,
+    "actual": {
+      "final_answer": "Chúc mừng bạn! Tôi đã tìm thấy bộ sản phẩm có mức giảm giá cao nhất và còn hàng trong ngân sách 20 triệu của bạn:\n- Laptop: HP 245 Office (ID: L0013) - Giá: 10,047,720đ (Giảm 25%)\n- Bàn phím: Keychron K2 2024 (ID: K0025) - Giá: 3,105,940đ (Giảm 30%)\n- Chuột: SteelSeries Rival Ultra (ID: M0021) - Giá: 864,000đ (Giảm 25%)\nTổng cộng: 14,017,660đ. Tất cả sản phẩm đều còn hàng.",
+      "tool_calls": [
+        {
+          "tool": "get_products_by_category",
+          "args": "laptop"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "keyboard"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "mouse"
+        },
+        {
+          "tool": "check_discount",
+          "args": "L0002"
+        }
+      ],
+      "steps": 4,
+      "total_time_ms": 142554,
+      "termination_reason": "success"
+    },
+    "expected": {
+      "feasible": true,
+      "recommended_combo": [
+        {
+          "id": "L0013",
+          "name": "HP 245 Office",
+          "discount_percent": 7,
+          "price_after_discount": 10047720
+        },
+        {
+          "id": "K0022",
+          "name": "Keychron K2 V2",
+          "discount_percent": 8,
+          "price_after_discount": 2511600
+        },
+        {
+          "id": "M0026",
+          "name": "Razer Essential Lite",
+          "discount_percent": 7,
+          "price_after_discount": 577530
+        }
+      ],
+      "total_cost": 13136850,
+      "remaining_budget": 6863150,
+      "note": "L0029 có discount cao hơn nhưng không đủ ngân sách cho mouse + keyboard"
+    },
+    "criteria_check": []
+  },
+  {
+    "test_id": "TC007",
+    "passed": false,
+    "actual": {
+      "final_answer": "Tôi xin đề xuất kế hoạch mua sắm tối ưu nhất với tổng ngân sách 30 triệu đồng như sau:\n- Laptop: Gigabyte G5 SE (L0029) - Giá: 19,848,920đ [Hiệu năng: 92]\n- Bàn phím: Keychron K2 2024 (K0025) - Giá: 3,105,940đ [Hiệu năng: 53]\n- Chuột: Logitech M331 2024 (M0014) - Giá: 520,320đ [Hiệu năng: 44]\n\nTổng chi phí: 23,475,180đ\nTổng hiệu năng: 189\nTrạng thái: Tất cả sản phẩm đều còn hàng.",
+      "tool_calls": [
+        {
+          "tool": "get_products_by_category",
+          "args": "laptop"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "keyboard"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "mouse"
+        },
+        {
+          "tool": "validate_combination",
+          "args": "L0029, K0025, M0014"
+        }
+      ],
+      "steps": 5,
+      "total_time_ms": 60965,
+      "termination_reason": "success"
+    },
+    "expected": {
+      "feasible": true,
+      "recommended_combo": [
+        {
+          "id": "L0029",
+          "name": "Gigabyte G5 SE",
+          "price_after_discount": 19848920,
+          "performance_score": 92
+        },
+        {
+          "id": "K0025",
+          "name": "Keychron K2 2024",
+          "price_after_discount": 3105940,
+          "performance_score": 53
+        },
+        {
+          "id": "M0007",
+          "name": "Razer Essential Lite",
+          "price_after_discount": 684000,
+          "performance_score": 30
+        }
+      ],
+      "total_cost": 23638860,
+      "remaining_budget": 6361140,
+      "total_performance_score": 175,
+      "upsell_suggestion": "Còn dư 6.361.140 VNĐ – có thể xem xét thêm màn hình, tai nghe, hoặc nâng cấp chuột gaming cao cấp hơn."
+    },
+    "criteria_check": []
+  },
+  {
+    "test_id": "TC008",
+    "passed": false,
+    "actual": {
+      "final_answer": "Combo sản phẩm hợp lệ gồm:\n- Laptop: HP 245 Office (L0013) - Giá: 10,047,720đ\n- Bàn phím: Logitech K120 V1 (K0009) - Giá: 287,100đ\n- Chuột: Logitech M331 2024 (M0014) - Giá: 520,320đ\nTổng tiền: 10,855,140đ (Nằm trong ngân sách 12,000,000đ)\nTổng hiệu năng: 174\nTrạng thái kho: Tất cả sản phẩm đều còn hàng.",
+      "tool_calls": [
+        {
+          "tool": "get_products_by_category",
+          "args": "laptop"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "keyboard"
+        },
+        {
+          "tool": "get_products_by_category",
+          "args": "mouse"
+        },
+        {
+          "tool": "validate_combination",
+          "args": "L0013, K0009, M0014"
+        }
+      ],
+      "steps": 5,
+      "total_time_ms": 57020,
+      "termination_reason": "success"
+    },
+    "expected": {
+      "feasible": true,
+      "brand_filter_applied": {
+        "laptop": "HP",
+        "mouse": "Logitech",
+        "keyboard": "Logitech"
+      },
+      "recommended_combo": [
+        {
+          "id": "L0013",
+          "name": "HP 245 Office",
+          "price_after_discount": 10047720,
+          "performance_score": 93
+        },
+        {
+          "id": "M0014",
+          "name": "Logitech M331 2024",
+          "price_after_discount": 520320,
+          "performance_score": 44
+        },
+        {
+          "id": "K0009",
+          "name": "Logitech K120 V1",
+          "price_after_discount": 287100,
+          "performance_score": 37
+        }
+      ],
+      "total_cost": 10855140,
+      "remaining_budget": 1144860,
+      "total_performance_score": 174,
+      "note": "Chỉ có 1 bàn phím Logitech còn hàng trong hệ thống: K0009"
+    },
+    "criteria_check": []
+  }
+]

@@ -1,8 +1,11 @@
 import os
 import re
+import json
+import time
 from typing import List, Dict, Any, Optional
 from src.core.llm_provider import LLMProvider
 from src.telemetry.logger import logger
+from src.telemetry.metrics import tracker
 
 class ReActAgent:
     """
@@ -60,24 +63,69 @@ class ReActAgent:
              """
     def run(self, user_input: str) -> str:
         """
-        Sửa lỗi TypeError: lấy result['content'] và xử lý vòng lặp ReAct chuẩn.
+        Enhanced ReAct loop with comprehensive logging for metrics, traces, and failure analysis.
         """
+        start_time = time.time()
         logger.log_event("AGENT_START", {"input": user_input, "model": self.llm.model_name})
+        
+        # Execution trace
+        execution_trace = {
+            "input": user_input,
+            "model": self.llm.model_name,
+            "steps": [],
+            "final_answer": None,
+            "termination_reason": None,
+            "total_time_ms": 0
+        }
         
         # Lịch sử hội thoại để gửi lại cho LLM (bao gồm Thought, Action, Observation)
         history = f"Question: {user_input}\n"
         system_prompt = self.get_system_prompt()
         steps = 0
+        total_latency = 0
        
         while steps < self.max_steps:
+            step_start = time.time()
             response = self.llm.generate(history, system_prompt=system_prompt)
+            step_end = time.time()
+            step_latency = int((step_end - step_start) * 1000)
+            total_latency += step_latency
+            
+            # Track metrics
+            tracker.track_request(response.get('provider', 'unknown'), self.llm.model_name, response.get('usage', {}), step_latency)
+            
             result = response['content'] if isinstance(response, dict) else response
             print(f"--- Step {steps+1} LLM OUTPUT ---\n", result)
 
+            # Add to trace
+            execution_trace["steps"].append({
+                "step": steps + 1,
+                "thought_action": result,
+                "latency_ms": step_latency,
+                "usage": response.get('usage', {})
+            })
+
             #  Nếu có Final Answer → kết thúc
             if "Final Answer:" in result:
-                logger.log_event("AGENT_END", {"steps": steps})
-                return result.split("Final Answer:")[-1].strip()
+                end_time = time.time()
+                total_time_ms = int((end_time - start_time) * 1000)
+                execution_trace["final_answer"] = result.split("Final Answer:")[-1].strip()
+                execution_trace["termination_reason"] = "success"
+                execution_trace["total_time_ms"] = total_time_ms
+                execution_trace["loop_count"] = steps + 1
+                execution_trace["total_latency_ms"] = total_latency
+                
+                logger.log_event("AGENT_END", {
+                    "steps": steps + 1, 
+                    "termination_quality": "success",
+                    "total_time_ms": total_time_ms,
+                    "total_latency_ms": total_latency
+                })
+                
+                # Save trace
+                self._save_execution_trace(execution_trace)
+                return execution_trace["final_answer"]
+            
             action_match = re.search(r"Action:\s*(\w+)\((.*)\)", result)
 
             if action_match:
@@ -87,24 +135,60 @@ class ReActAgent:
                 observation = self._execute_tool(tool_name, args_str)
                 print(f"--- Observation ---\n", observation)
 
+                # Add observation to trace
+                execution_trace["steps"][-1]["observation"] = observation
+
                 history += f"\n{result}\nObservation: {observation}\n"
             else:
-                history += f"\n{result}\n(System Note: Please provide an Action or Final Answer.)\n"
+                # Parser error
+                logger.log_event("PARSER_ERROR", {"step": steps + 1, "output": result})
+                observation = "Error: Invalid action format. Please provide Action: tool_name(arguments)"
+                execution_trace["steps"][-1]["observation"] = observation
+                history += f"\n{result}\nObservation: {observation}\n"
 
             steps += 1
 
-        logger.log_event("AGENT_END", {"steps": steps})
+        # Timeout
+        end_time = time.time()
+        total_time_ms = int((end_time - start_time) * 1000)
+        execution_trace["termination_reason"] = "timeout"
+        execution_trace["total_time_ms"] = total_time_ms
+        execution_trace["loop_count"] = steps
+        execution_trace["total_latency_ms"] = total_latency
+        
+        logger.log_event("AGENT_END", {
+            "steps": steps, 
+            "termination_quality": "timeout",
+            "total_time_ms": total_time_ms,
+            "total_latency_ms": total_latency
+        })
+        
+        # Save trace
+        self._save_execution_trace(execution_trace)
         return "Max steps reached without final answer."
     def _execute_tool(self, tool_name: str, args_str: str) -> str:
         try:
             tool_dict = next((t for t in self.tools if t['name'] == tool_name), None)
 
             if not tool_dict:
-                return f"Error: Tool '{tool_name}' not found."
+                # Hallucination error
+                logger.log_event("HALLUCINATION_ERROR", {"tool_name": tool_name, "available_tools": [t['name'] for t in self.tools]})
+                return f"Error: Tool '{tool_name}' not found. Available tools: {[t['name'] for t in self.tools]}"
+            
             tool_func = tool_dict['func'] 
             clean_args = args_str.strip().strip('"').strip("'").strip(")")
             return tool_func(clean_args)
         
         except Exception as e:
+            logger.log_event("TOOL_EXECUTION_ERROR", {"tool_name": tool_name, "args": args_str, "error": str(e)})
             return f"Error executing tool: {str(e)}"
+    
+    def _save_execution_trace(self, trace: Dict[str, Any]):
+        """Save execution trace to logs/ directory as JSON."""
+        os.makedirs("logs", exist_ok=True)
+        timestamp = int(time.time())
+        filename = f"logs/trace_{timestamp}.json"
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(trace, f, indent=2, ensure_ascii=False)
+        logger.log_event("TRACE_SAVED", {"filename": filename})
     

@@ -27,10 +27,30 @@ class PerformanceTracker:
 
     def _calculate_cost(self, model: str, usage: Dict[str, int]) -> float:
         """
-        TODO: Implement real pricing logic.
-        For now, returns a dummy constant.
+        Calculate the cost based on the model and token usage.
+        Pricing is based on current rates from providers (as of 2026).
         """
-        return (usage.get("total_tokens", 0) / 1000) * 0.01
+        # Pricing per 1M tokens (input/output)
+        pricing = {
+            # OpenAI models
+            "gpt-4o": {"input": 2.50, "output": 10.00},
+            "gpt-3.5-turbo": {"input": 0.50, "output": 1.50},
+            # Gemini models
+            "gemini-3-flash-preview": {"input": 0.50, "output": 3.00},
+            "gemini-1.5-flash": {"input": 0.35, "output": 1.05},  # Approximate
+            # Local models (no cost)
+            "phi-3-mini-4k-instruct-q4.gguf": {"input": 0.0, "output": 0.0},
+        }
+        
+        # Default pricing if model not found
+        default_pricing = {"input": 0.01, "output": 0.02}
+        
+        model_pricing = pricing.get(model, default_pricing)
+        
+        input_cost = (usage.get("prompt_tokens", 0) / 1_000_000) * model_pricing["input"]
+        output_cost = (usage.get("completion_tokens", 0) / 1_000_000) * model_pricing["output"]
+        
+        return input_cost + output_cost
 
 # Global tracker instance
 tracker = PerformanceTracker()
