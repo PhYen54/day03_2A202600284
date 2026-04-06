@@ -45,60 +45,30 @@ class PerformanceTracker:
 
     def _calculate_cost(self, model: str, usage: Dict[str, int]) -> float:
         """
-        Tính toán chi phí dựa trên số lượng token đầu vào/đầu ra và bảng giá.
+        Calculate the cost based on the model and token usage.
+        Pricing is based on current rates from providers (as of 2026).
         """
-        rates = self.PRICING_TABLE.get(model, self.PRICING_TABLE["default"])
-        
-        prompt_tokens = usage.get("prompt_tokens", 0)
-        completion_tokens = usage.get("completion_tokens", 0)
-        
-        # Giá thường được tính trên 1 triệu (1,000,000) token
-        prompt_cost = (prompt_tokens / 1_000_000) * rates["prompt"]
-        completion_cost = (completion_tokens / 1_000_000) * rates["completion"]
-        
-        return prompt_cost + completion_cost
-
-    def get_summary(self) -> Dict[str, Any]:
-        """
-        Tổng hợp toàn bộ metrics trong session hiện tại để dễ phân tích.
-        """
-        if not self.session_metrics:
-            return {"status": "No metrics recorded yet."}
-
-        total_requests = len(self.session_metrics)
-        total_prompt_tokens = sum(m["prompt_tokens"] for m in self.session_metrics)
-        total_completion_tokens = sum(m["completion_tokens"] for m in self.session_metrics)
-        total_cost = sum(m["cost_estimate"] for m in self.session_metrics)
-        avg_latency = sum(m["latency_ms"] for m in self.session_metrics) / total_requests
-
-        return {
-            "total_requests": total_requests,
-            "total_prompt_tokens": total_prompt_tokens,
-            "total_completion_tokens": total_completion_tokens,
-            "total_tokens": total_prompt_tokens + total_completion_tokens,
-            "total_cost_usd": round(total_cost, 6),
-            "avg_latency_ms": round(avg_latency, 2)
+        # Pricing per 1M tokens (input/output)
+        pricing = {
+            # OpenAI models
+            "gpt-4o": {"input": 2.50, "output": 10.00},
+            "gpt-3.5-turbo": {"input": 0.50, "output": 1.50},
+            # Gemini models
+            "gemini-3-flash-preview": {"input": 0.50, "output": 3.00},
+            "gemini-1.5-flash": {"input": 0.35, "output": 1.05},  # Approximate
+            # Local models (no cost)
+            "phi-3-mini-4k-instruct-q4.gguf": {"input": 0.0, "output": 0.0},
         }
         
-    def print_summary(self):
-        """
-        In báo cáo thống kê ra màn hình một cách trực quan.
-        """
-        summary = self.get_summary()
-        if "status" in summary:
-            print(f"\n[Telemetry] {summary['status']}")
-            return
-
-        print("\n" + "="*40)
-        print("📊 LLM PERFORMANCE SUMMARY")
-        print("="*40)
-        print(f" Requests Count    : {summary['total_requests']}")
-        print(f" Avg Latency       : {summary['avg_latency_ms']} ms")
-        print(f" Prompt Tokens     : {summary['total_prompt_tokens']:,}")
-        print(f" Completion Tokens : {summary['total_completion_tokens']:,}")
-        print(f" Total Tokens      : {summary['total_tokens']:,}")
-        print(f" Estimated Cost    : ${summary['total_cost_usd']}")
-        print("="*40 + "\n")
+        # Default pricing if model not found
+        default_pricing = {"input": 0.01, "output": 0.02}
+        
+        model_pricing = pricing.get(model, default_pricing)
+        
+        input_cost = (usage.get("prompt_tokens", 0) / 1_000_000) * model_pricing["input"]
+        output_cost = (usage.get("completion_tokens", 0) / 1_000_000) * model_pricing["output"]
+        
+        return input_cost + output_cost
 
 # Global tracker instance
 tracker = PerformanceTracker()
