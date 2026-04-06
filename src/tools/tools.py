@@ -39,6 +39,45 @@ def get_price(product_name: str) -> dict:
 
     return {"error": "Item not found"}
 
+def calculate_total(item_ids: list) -> dict:
+    """
+    Tính tổng tiền của giỏ hàng dựa trên danh sách ID sản phẩm.
+    """
+    data = load_products()
+    total_amount = 0
+    calculated_items = []
+    errors = []
+
+    for item_id in item_ids:
+        # Tìm sản phẩm trong database dựa vào ID
+        item = next((x for x in data if x["id"] == item_id), None)
+        
+        if not item:
+            errors.append(f"Mã sản phẩm {item_id} không tồn tại.")
+            continue
+            
+        if item["stock"] <= 0:
+            errors.append(f"Sản phẩm {item['name']} ({item_id}) đã hết hàng, không thể thêm vào tổng.")
+            continue
+
+        # Tính giá đã giảm
+        base_price = item["price"]
+        discount = item.get("discount_percent", 0)
+        final_price = int(base_price * (1 - discount / 100))
+        
+        total_amount += final_price
+        calculated_items.append(f"{item['name']} ({final_price}đ)")
+
+    # Trả về một Dictionary chi tiết để Agent đọc và hiểu (Observation)
+    result = {
+        "status": "success" if not errors else "partial_success_or_error",
+        "total_amount": total_amount,
+        "items_included": calculated_items,
+        "warnings": errors
+    }
+
+    return result
+
 
 # ================= TEST =================
 if __name__ == "__main__":
