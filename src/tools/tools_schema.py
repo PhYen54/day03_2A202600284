@@ -36,6 +36,26 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "calculate_total",
+            "description": "Tính tổng tiền của giỏ hàng dựa trên danh sách ID sản phẩm, có tính đến tình trạng kho và giảm giá.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "item_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Danh sách các mã định danh (ID) của sản phẩm để tính tổng tiền."
+                    }
+                },
+                "required": ["item_ids"]
+            }
+        }
+    },
+  {
+        "type": "function",
+        "function": {
             "name": "check_discount",
             "description": "check product name and and return discount",
             "parameters": {
