@@ -1,18 +1,30 @@
 import time
 from typing import Dict, Any, List
-from src.telemetry.logger import logger
+from logger import logger 
 
 class PerformanceTracker:
     """
     Tracking industry-standard metrics for LLMs.
     """
+    
+    # Bảng giá tham khảo (USD / 1 triệu token) - Có thể tùy biến thêm
+    PRICING_TABLE = {
+        "gemma-4-31b-it": {
+            "prompt": 0.140, 
+            "completion": 0.400,
+            "cached": 0.450 # Thêm thông số cached từ ảnh nếu sau này bạn cần dùng
+        }
+    }
+
     def __init__(self):
-        self.session_metrics = []
+        self.session_metrics: List[Dict[str, Any]] = []
 
     def track_request(self, provider: str, model: str, usage: Dict[str, int], latency_ms: int):
         """
         Logs a single request metric to our telemetry.
         """
+        cost = self._calculate_cost(model, usage)
+        
         metric = {
             "provider": provider,
             "model": model,
@@ -20,10 +32,16 @@ class PerformanceTracker:
             "completion_tokens": usage.get("completion_tokens", 0),
             "total_tokens": usage.get("total_tokens", 0),
             "latency_ms": latency_ms,
-            "cost_estimate": self._calculate_cost(model, usage) # Mock cost calculation
+            "cost_estimate": cost
         }
         self.session_metrics.append(metric)
-        logger.log_event("LLM_METRIC", metric)
+        
+        # Bắt lỗi nhẹ trong trường hợp logger chưa được setup chuẩn
+        try:
+            logger.log_event("LLM_METRIC", metric)
+        except AttributeError:
+            # Fallback nếu logger không có hàm log_event
+            print(f"[METRICS] Tracked: {usage.get('total_tokens', 0)} tokens | {latency_ms}ms")
 
     def _calculate_cost(self, model: str, usage: Dict[str, int]) -> float:
         """
