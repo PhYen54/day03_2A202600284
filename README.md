@@ -15,6 +15,23 @@ cp .env.example .env
 pip install -r requirements.txt
 ```
 
+### 2.1 Enable LangSmith Tracing (Optional but recommended)
+To log every ReAct step (Thought/Action/Observation) to LangSmith:
+
+1. Create an API key at LangSmith.
+2. Set these values in `.env`:
+
+```env
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=your_langsmith_key
+LANGSMITH_PROJECT=day3-react-agent
+```
+
+When enabled, each agent run is traced as:
+- Root run: `ReActAgent.run`
+- Child runs for each LLM step: `react_step_N`
+- Child runs for each tool call: `tool_<tool_name>`
+
 ### 3. Directory Structure
 - `src/tools/`: Extension point for your custom tools.
 

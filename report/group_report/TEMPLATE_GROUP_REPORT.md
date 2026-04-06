@@ -1,8 +1,8 @@
 # Group Report: Lab 3 - Production-Grade Agentic System
 
-- **Team Name**: [Name]
-- **Team Members**: [Member 1, Member 2, ...]
-- **Deployment Date**: [YYYY-MM-DD]
+- **Team Name**: [X2]
+- **Team Members**: [Phương Hoàng Yến, Nguyễn Minh Châu, Trần Vọng Triển, Vũ Tiến Thành, Chu Minh Quân]
+- **Deployment Date**: [2026-04-06]
 
 ---
 
@@ -27,8 +27,8 @@
 | `search_api` | `string` | Retrieve real-time information from Google Search. |
 
 ### 2.3 LLM Providers Used
-- **Primary**: [e.g., GPT-4o]
-- **Secondary (Backup)**: [e.g., Gemini 1.5 Flash]
+- **Primary**: gemini-3-flash-preview
+- **Secondary (Backup)**: 
 
 ---
 
