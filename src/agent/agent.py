@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 from src.core.llm_provider import LLMProvider
 from src.telemetry.logger import logger
 from src.telemetry.metrics import tracker
+from src.telemetry.langsmith_tracer import langsmith_tracer
 
 class ReActAgent:
     """
@@ -67,6 +68,7 @@ class ReActAgent:
         """
         start_time = time.time()
         logger.log_event("AGENT_START", {"input": user_input, "model": self.llm.model_name})
+        root_span = langsmith_tracer.start_agent_run(user_input, self.llm.model_name, self.max_steps)
         
         # Execution trace
         execution_trace = {
@@ -86,6 +88,12 @@ class ReActAgent:
        
         while steps < self.max_steps:
             step_start = time.time()
+            step_span = root_span.start_child(
+                name=f"react_step_{steps + 1}",
+                run_type="llm",
+                inputs={"history": history},
+                metadata={"step": steps + 1},
+            )
             response = self.llm.generate(history, system_prompt=system_prompt)
             step_end = time.time()
             step_latency = int((step_end - step_start) * 1000)
@@ -96,6 +104,13 @@ class ReActAgent:
             
             result = response['content'] if isinstance(response, dict) else response
             print(f"--- Step {steps+1} LLM OUTPUT ---\n", result)
+            step_span.end(
+                outputs={
+                    "thought_action": result,
+                    "latency_ms": step_latency,
+                    "usage": response.get('usage', {}) if isinstance(response, dict) else {},
+                }
+            )
 
             # Add to trace
             execution_trace["steps"].append({
@@ -124,6 +139,14 @@ class ReActAgent:
                 
                 # Save trace
                 self._save_execution_trace(execution_trace)
+                root_span.end(
+                    outputs={
+                        "termination_reason": "success",
+                        "final_answer": execution_trace["final_answer"],
+                        "steps": steps + 1,
+                        "total_time_ms": total_time_ms,
+                    }
+                )
                 return execution_trace["final_answer"]
             
             action_match = re.search(r"Action:\s*(\w+)\((.*)\)", result)
@@ -132,7 +155,7 @@ class ReActAgent:
                 tool_name = action_match.group(1)
                 args_str = action_match.group(2)
 
-                observation = self._execute_tool(tool_name, args_str)
+                observation = self._execute_tool(tool_name, args_str, root_span, steps + 1)
                 print(f"--- Observation ---\n", observation)
 
                 # Add observation to trace
@@ -165,23 +188,46 @@ class ReActAgent:
         
         # Save trace
         self._save_execution_trace(execution_trace)
+        root_span.end(
+            outputs={
+                "termination_reason": "timeout",
+                "steps": steps,
+                "total_time_ms": total_time_ms,
+            }
+        )
         return "Max steps reached without final answer."
-    def _execute_tool(self, tool_name: str, args_str: str) -> str:
+    def _execute_tool(self, tool_name: str, args_str: str, root_span: Any = None, step: Optional[int] = None) -> str:
+        tool_span = root_span.start_child(
+            name=f"tool_{tool_name}",
+            run_type="tool",
+            inputs={"raw_args": args_str},
+            metadata={"step": step},
+        ) if root_span else None
+
         try:
             tool_dict = next((t for t in self.tools if t['name'] == tool_name), None)
 
             if not tool_dict:
                 # Hallucination error
                 logger.log_event("HALLUCINATION_ERROR", {"tool_name": tool_name, "available_tools": [t['name'] for t in self.tools]})
-                return f"Error: Tool '{tool_name}' not found. Available tools: {[t['name'] for t in self.tools]}"
+                err = f"Error: Tool '{tool_name}' not found. Available tools: {[t['name'] for t in self.tools]}"
+                if tool_span:
+                    tool_span.end(outputs={"observation": err}, error=err)
+                return err
             
             tool_func = tool_dict['func'] 
             clean_args = args_str.strip().strip('"').strip("'").strip(")")
-            return tool_func(clean_args)
+            observation = tool_func(clean_args)
+            if tool_span:
+                tool_span.end(outputs={"args": clean_args, "observation": observation})
+            return observation
         
         except Exception as e:
             logger.log_event("TOOL_EXECUTION_ERROR", {"tool_name": tool_name, "args": args_str, "error": str(e)})
-            return f"Error executing tool: {str(e)}"
+            error_message = f"Error executing tool: {str(e)}"
+            if tool_span:
+                tool_span.end(outputs={"observation": error_message}, error=str(e))
+            return error_message
     
     def _save_execution_trace(self, trace: Dict[str, Any]):
         """Save execution trace to logs/ directory as JSON."""

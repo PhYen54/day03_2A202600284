@@ -12,6 +12,7 @@ from src.tools.budget_tools import (
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
+from src.telemetry.metrics import tracker
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -35,13 +36,12 @@ tools = [
 ]
 
 # Tạo agent
-agent = ReActAgent(llm=llm, tools=tools, max_steps=8)
+agent = ReActAgent(llm=llm, tools=tools, max_steps=4)
 
 # Query test
 query = """
-Find a combination of laptop, keyboard, and mouse
-with total price under 15000000
-and total performance above 80.
+Find a combination of laptop, keyboard
+with total price under 15000000.
 Check stock before selecting.
 Then print the bill.
 """
@@ -50,3 +50,5 @@ result = agent.run(query)
 
 print("\n===== FINAL RESULT =====")
 print(result)
+
+tracker.print_summary()

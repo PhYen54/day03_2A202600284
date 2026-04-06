@@ -18,7 +18,7 @@ class IndustryLogger:
 
         # File Handler (JSON)
         log_file = os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d')}.log")
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
         
         # Console Handler
         console_handler = logging.StreamHandler()

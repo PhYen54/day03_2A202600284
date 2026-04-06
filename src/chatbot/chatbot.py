@@ -37,7 +37,7 @@ def test_chatbot():
     """Test the baseline chatbot."""
     load_dotenv()
     
-    provider = GeminiProvider(model_name="gemini-3-flash-preview", api_key=os.getenv("GEMINI_API_KEY"))
+    provider = GeminiProvider(model_name="gemini-3-flash-preview", api_key=os.getenv("GOOGLE_API_KEY"))
     
     # Initialize chatbot
     chatbot = BaselineChatbot(llm=provider)
