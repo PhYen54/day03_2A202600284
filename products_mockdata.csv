@@ -1,0 +1,31 @@
+﻿id,category,name,price,discount_percent,performance_score,stock
+K0001,keyboard,Akko 3068 Pro,1830000,1,35,0
+L0002,laptop,Gigabyte G5 2024,19445000,5,70,15
+L0003,laptop,HP 245 Office,8199000,3,55,8
+M0004,mouse,Logitech M170 SE,206000,9,20,8
+K0005,keyboard,Mechanical Blue Switch SE,1045000,5,27,0
+L0006,laptop,HP 245 Gaming,9386000,3,72,0
+M0007,mouse,Razer Essential Lite,684000,0,30,10
+M0008,mouse,Logitech M170 Gaming,171000,4,15,15
+K0009,keyboard,Logitech K120 V1,290000,1,37,2
+M0010,mouse,Fuhlen Basic Office,174000,2,22,14
+L0011,laptop,HP 245 Lite,8962000,5,67,12
+K0012,keyboard,Mechanical Red Switch SE,1116000,8,41,15
+L0013,laptop,HP 245 Office,10804000,7,93,3
+M0014,mouse,Logitech M331 2024,542000,4,44,3
+M0015,mouse,SteelSeries Rival Pro,703000,0,15,2
+M0016,mouse,Logitech M331 V2,422000,3,27,5
+M0017,mouse,Logitech M331 V1,598000,7,50,0
+K0018,keyboard,Mechanical Blue Switch Pro,1242000,1,34,4
+L0019,laptop,Asus Vivobook V1,8242000,5,49,4
+L0020,laptop,MSI Modern Ultra,16159000,4,76,3
+M0021,mouse,SteelSeries Rival Ultra,900000,4,21,3
+K0022,keyboard,Keychron K2 V2,2730000,8,43,14
+M0023,mouse,SteelSeries Rival Ultra,759000,6,15,2
+L0024,laptop,Gigabyte G5 SE,20288000,1,78,14
+K0025,keyboard,Keychron K2 2024,3202000,3,53,2
+M0026,mouse,Razer Essential Lite,621000,7,22,9
+L0027,laptop,Acer Aspire 3 V1,6821000,7,44,1
+L0028,laptop,Asus Vivobook Pro,10244000,6,69,14
+L0029,laptop,Gigabyte G5 SE,21812000,9,92,7
+L0030,laptop,MacBook Air SE,24030000,7,83,2
