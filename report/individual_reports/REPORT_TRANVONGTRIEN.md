@@ -39,14 +39,16 @@ Check stock before selecting.
 Then print the bill."
 
 output: 
-===== FINAL RESULT =====
-The selected combination is:
-Laptop: HP 245 Office (L0013) - 10,047,720đ
-Keyboard: Logitech K120 V1 (K0009) - 287,100đ
-Mouse: Logitech M170 SE (M0004) - 187,460đ
-Total Price: 10,522,280đ
-Total Performance: 150
-Stock: Valid
+
+     ===== FINAL RESULT =====
+     The selected combination is:
+     Laptop: HP 245 Office (L0013) - 10,047,720đ
+     Keyboard: Logitech K120 V1 (K0009) - 287,100đ
+     Mouse: Logitech M170 SE (M0004) - 187,460đ
+     Total Price: 10,522,280đ
+     Total Performance: 150
+     Stock: Valid
+
 
 
 - **Diagnosis**: Lỗi nằm ở System Prompt. Trong phần CORE TASK, hệ thống bị áp đặt quy tắc cứng: "Find a combination of EXACTLY 1 laptop, 1 keyboard, and 1 mouse". Khi LLM đối mặt với sự mâu thuẫn giữa câu hỏi (2 chuột) và quy tắc hệ thống (1 chuột), nó ưu tiên tuân thủ quy tắc hệ thống (System Prompt) hơn là yêu cầu nhất thời của người dùng.
@@ -54,14 +56,18 @@ Stock: Valid
 
 Update System Prompt:
 
-Thay đổi từ: "CORE TASK: Find a combination of EXACTLY 1 laptop, 1 keyboard, and 1 mouse..."
-Thành: "        CORE TASK:
+Thay đổi từ: 
+
+CORE TASK: Find a combination of EXACTLY 1 laptop, 1 keyboard, and 1 mouse...
+
+Thành:     
+
+        CORE TASK:
         1. Parse Query: Identify requested products, quantities, budget, and performance threshold.
         2. Handle Defaults: 
            - If NO quantity is specified: Default to 1 for that category.
            - If NO budget is specified: Assume budget is infinite.
            - If NO performance threshold is specified: Default to 0.
-        
         Your goal is to find a combination of products satisfying:
         - Total Net Price (After discount) <= User's Budget (if any).
         - Total Performance >= User's Threshold (if any).
