@@ -1,0 +1,334 @@
+[
+  {
+    "test_id": "TC001",
+    "title": "Ngân sách chuẩn 5 triệu – tổ hợp tối ưu cơ bản",
+    "description": "Người dùng có đúng 5.000.000 VNĐ, yêu cầu mua đủ 3 loại: laptop, chuột, bàn phím. Agent phải tìm tổ hợp khả thi và không vượt ngân sách.",
+    "user_input": "Tôi có 5 triệu, hãy lập kế hoạch mua laptop, chuột, bàn phím sao cho không vượt ngân sách.",
+    "budget": 5000000,
+    "required_categories": ["laptop", "mouse", "keyboard"],
+    "mock_data_subset": ["L0003", "L0019", "M0008", "M0010", "K0009", "K0005"],
+    "expected_tool_calls": [
+      { "tool": "get_price", "args": { "item": "laptop" } },
+      { "tool": "get_price", "args": { "item": "mouse" } },
+      { "tool": "get_price", "args": { "item": "keyboard" } },
+      { "tool": "calculate_total", "args": { "items": ["<laptop_id>", "<mouse_id>", "<keyboard_id>"] } },
+      { "tool": "optimize_budget", "args": { "budget": 5000000 } }
+    ],
+    "expected_reasoning_steps": [
+      "Nhận diện ngân sách: 5.000.000 VNĐ",
+      "Lấy danh sách giá các laptop, chuột, bàn phím còn hàng (stock > 0)",
+      "Loại bỏ sản phẩm hết hàng (stock = 0): K0001, K0005, L0006, M0017",
+      "Tính giá sau giảm giá cho từng sản phẩm",
+      "Thử các tổ hợp (laptop + mouse + keyboard) để tìm tổng <= 5.000.000",
+      "Không có laptop nào có giá <= 5 triệu sau khi trừ mouse và keyboard → thông báo không đủ ngân sách hoặc đề xuất bỏ laptop"
+    ],
+    "expected_output": {
+      "feasible": false,
+      "reason": "Không có laptop nào trong danh mục có giá đủ thấp để kết hợp đủ 3 loại trong 5 triệu VNĐ.",
+      "suggestion": "Agent nên đề xuất người dùng nâng ngân sách hoặc chỉ mua mouse + keyboard trong tầm giá, hoặc tìm laptop giá rẻ nhất ngoài danh sách."
+    },
+    "evaluation_criteria": [
+      "Agent có gọi get_price cho cả 3 danh mục không?",
+      "Agent có lọc sản phẩm hết hàng (stock = 0) trước khi tối ưu không?",
+      "Agent có nhận ra không có tổ hợp khả thi và thông báo rõ ràng không?",
+      "Agent có đề xuất giải pháp thay thế không?"
+    ]
+  },
+  {
+    "test_id": "TC002",
+    "title": "Ngân sách 5 triệu – chỉ mua chuột và bàn phím (bỏ laptop)",
+    "description": "Người dùng chấp nhận bỏ laptop, chỉ cần mua chuột và bàn phím tốt nhất trong 5 triệu. Agent phải tối ưu performance_score trong ngân sách.",
+    "user_input": "Tôi có 5 triệu, không cần laptop, chỉ mua chuột và bàn phím sao cho hiệu năng tốt nhất trong ngân sách.",
+    "budget": 5000000,
+    "required_categories": ["mouse", "keyboard"],
+    "mock_data_subset": ["M0007", "M0008", "M0010", "M0014", "K0009", "K0012", "K0022", "K0025"],
+    "expected_tool_calls": [
+      { "tool": "get_price", "args": { "item": "mouse" } },
+      { "tool": "get_price", "args": { "item": "keyboard" } },
+      { "tool": "calculate_total", "args": { "items": ["M0014", "K0022"] } },
+      { "tool": "optimize_budget", "args": { "budget": 5000000 } }
+    ],
+    "expected_reasoning_steps": [
+      "Xác định chỉ cần mouse + keyboard",
+      "Lọc sản phẩm còn hàng trong 2 danh mục",
+      "Tính giá sau giảm: K0022 = 2.730.000 * 0.92 = 2.511.600; M0014 = 542.000 * 0.96 = 520.320",
+      "Tổng = 3.031.920 <= 5.000.000 → khả thi",
+      "So sánh performance_score: K0022 (43) + M0014 (44) = 87 – tổ hợp điểm cao nhất khả thi",
+      "Kiểm tra K0025 (53, giá cao hơn) kết hợp M0014 (44): 3.202.000*0.97 + 542.000*0.96 = 3.105.940 + 520.320 = 3.626.260 <= 5tr, tổng score = 97"
+    ],
+    "expected_output": {
+      "feasible": true,
+      "recommended_combo": [
+        { "id": "K0025", "name": "Keychron K2 2024", "price_after_discount": 3105940, "performance_score": 53 },
+        { "id": "M0014", "name": "Logitech M331 2024", "price_after_discount": 520320, "performance_score": 44 }
+      ],
+      "total_cost": 3626260,
+      "remaining_budget": 1373740,
+      "total_performance_score": 97
+    },
+    "evaluation_criteria": [
+      "Agent có tính giá sau giảm giá chính xác không?",
+      "Agent có tối ưu theo performance_score thay vì chỉ tìm combo rẻ nhất không?",
+      "Agent có báo cáo số tiền dư lại không?"
+    ]
+  },
+  {
+    "test_id": "TC003",
+    "title": "Ngân sách 15 triệu – mua đủ 3 loại, ưu tiên hiệu năng",
+    "description": "Người dùng có 15 triệu, muốn mua laptop + chuột + bàn phím với hiệu năng tổng thể cao nhất. Agent phải thử nhiều tổ hợp.",
+    "user_input": "Tôi có 15 triệu, muốn mua laptop, chuột và bàn phím. Ưu tiên hiệu năng cao nhất có thể trong ngân sách.",
+    "budget": 15000000,
+    "required_categories": ["laptop", "mouse", "keyboard"],
+    "mock_data_subset": ["L0003", "L0011", "L0019", "L0027", "M0007", "M0014", "K0012", "K0022", "K0025"],
+    "expected_tool_calls": [
+      { "tool": "get_price", "args": { "item": "laptop" } },
+      { "tool": "get_price", "args": { "item": "mouse" } },
+      { "tool": "get_price", "args": { "item": "keyboard" } },
+      { "tool": "calculate_total", "args": { "items": ["L0011", "M0014", "K0022"] } },
+      { "tool": "optimize_budget", "args": { "budget": 15000000 } }
+    ],
+    "expected_reasoning_steps": [
+      "Ngân sách 15 triệu đủ để mua cả 3 loại",
+      "Lọc laptop còn hàng dưới 15 triệu (sau giảm): L0003, L0011, L0019, L0027, L0028",
+      "L0011: 8.962.000 * 0.95 = 8.513.900, score = 67",
+      "L0028: 10.244.000 * 0.94 = 9.629.360, score = 69",
+      "Chọn laptop tốt nhất trong tầm, sau đó tối ưu mouse + keyboard với ngân sách còn lại",
+      "L0028 + K0025 + M0014 = 9.629.360 + 3.105.940 + 520.320 = 13.255.620, score = 69+53+44 = 166"
+    ],
+    "expected_output": {
+      "feasible": true,
+      "recommended_combo": [
+        { "id": "L0028", "name": "Asus Vivobook Pro", "price_after_discount": 9629360, "performance_score": 69 },
+        { "id": "K0025", "name": "Keychron K2 2024", "price_after_discount": 3105940, "performance_score": 53 },
+        { "id": "M0014", "name": "Logitech M331 2024", "price_after_discount": 520320, "performance_score": 44 }
+      ],
+      "total_cost": 13255620,
+      "remaining_budget": 1744380,
+      "total_performance_score": 166
+    },
+    "evaluation_criteria": [
+      "Agent có tối ưu performance_score tổng hợp thay vì tối thiểu chi phí không?",
+      "Agent có thử nhiều tổ hợp laptop trước khi chọn không?",
+      "Agent có trình bày chi tiết từng sản phẩm và giá sau giảm không?"
+    ]
+  },
+  {
+    "test_id": "TC004",
+    "title": "Sản phẩm ưa thích hết hàng – Agent phải xử lý fallback",
+    "description": "Người dùng yêu cầu cụ thể laptop HP 245 Gaming (L0006) nhưng sản phẩm này hết hàng (stock=0). Agent phải nhận ra và gợi ý thay thế.",
+    "user_input": "Tôi có 12 triệu, muốn mua HP 245 Gaming cùng chuột và bàn phím phù hợp.",
+    "budget": 12000000,
+    "required_categories": ["laptop", "mouse", "keyboard"],
+    "target_product": "L0006",
+    "mock_data_subset": ["L0006", "L0003", "L0011", "M0007", "M0014", "K0009", "K0012"],
+    "expected_tool_calls": [
+      { "tool": "get_price", "args": { "item": "HP 245 Gaming" } },
+      { "tool": "get_price", "args": { "item": "mouse" } },
+      { "tool": "get_price", "args": { "item": "keyboard" } },
+      { "tool": "optimize_budget", "args": { "budget": 12000000 } }
+    ],
+    "expected_reasoning_steps": [
+      "Tìm kiếm HP 245 Gaming → L0006, giá 9.386.000, discount 3%",
+      "Kiểm tra stock L0006 = 0 → sản phẩm hết hàng",
+      "Thông báo hết hàng, không thể mua",
+      "Tìm laptop thay thế có hiệu năng tương đương (performance_score ~72) và còn hàng",
+      "L0011 (score=67, còn hàng) → gợi ý thay thế",
+      "Tính combo L0011 + M0014 + K0012 trong 12 triệu"
+    ],
+    "expected_output": {
+      "feasible": false,
+      "out_of_stock_items": ["L0006 – HP 245 Gaming"],
+      "fallback_recommendation": {
+        "combo": [
+          { "id": "L0011", "name": "HP 245 Lite", "note": "Thay thế gần nhất còn hàng, score=67" },
+          { "id": "K0012", "name": "Mechanical Red Switch SE", "price_after_discount": 1026720 },
+          { "id": "M0014", "name": "Logitech M331 2024", "price_after_discount": 520320 }
+        ]
+      }
+    },
+    "evaluation_criteria": [
+      "Agent có kiểm tra trường stock trước khi đề xuất không?",
+      "Agent có thông báo rõ ràng lý do không mua được L0006 không?",
+      "Agent có chủ động tìm sản phẩm thay thế thay vì dừng lại không?"
+    ]
+  },
+  {
+    "test_id": "TC005",
+    "title": "Ngân sách quá thấp – không thể mua đủ 3 loại",
+    "description": "Người dùng chỉ có 1 triệu, không thể mua laptop. Agent phải nhận diện impossibility và giải thích rõ ràng.",
+    "user_input": "Tôi chỉ có 1 triệu đồng, tôi có thể mua laptop, chuột và bàn phím không?",
+    "budget": 1000000,
+    "required_categories": ["laptop", "mouse", "keyboard"],
+    "mock_data_subset": ["L0003", "M0008", "M0010", "K0009"],
+    "expected_tool_calls": [
+      { "tool": "get_price", "args": { "item": "laptop" } },
+      { "tool": "get_price", "args": { "item": "mouse" } },
+      { "tool": "get_price", "args": { "item": "keyboard" } },
+      { "tool": "calculate_total", "args": { "items": ["cheapest_laptop", "cheapest_mouse", "cheapest_keyboard"] } },
+      { "tool": "optimize_budget", "args": { "budget": 1000000 } }
+    ],
+    "expected_reasoning_steps": [
+      "Ngân sách: 1.000.000 VNĐ",
+      "Laptop rẻ nhất còn hàng: L0027 = 6.821.000 * 0.93 = 6.343.530 → đã vượt ngân sách",
+      "Không có laptop nào dưới 1 triệu",
+      "Kết luận: Không thể mua laptop trong ngân sách này",
+      "Đề xuất: Chỉ có thể mua mouse + keyboard trong 1 triệu",
+      "Mouse rẻ nhất: M0008 = 171.000 * 0.96 = 164.160; Keyboard: K0009 = 290.000 * 0.99 = 287.100; Tổng = 451.260"
+    ],
+    "expected_output": {
+      "feasible": false,
+      "reason": "Laptop rẻ nhất hiện có (sau giảm giá) là 6.343.530 VNĐ, vượt toàn bộ ngân sách 1.000.000 VNĐ.",
+      "partial_plan": {
+        "affordable_combo": [
+          { "id": "M0008", "name": "Logitech M170 Gaming", "price_after_discount": 164160 },
+          { "id": "K0009", "name": "Logitech K120 V1", "price_after_discount": 287100 }
+        ],
+        "total": 451260,
+        "missing": ["laptop"]
+      }
+    },
+    "evaluation_criteria": [
+      "Agent có xác định rõ loại sản phẩm nào không thể mua không?",
+      "Agent có đề xuất partial plan thay vì chỉ từ chối không?",
+      "Agent có giải thích con số cụ thể (giá laptop thấp nhất) không?"
+    ]
+  },
+  {
+    "test_id": "TC006",
+    "title": "Ưu tiên giảm giá cao nhất – tối ưu theo discount",
+    "description": "Người dùng muốn tận dụng khuyến mãi tốt nhất, ưu tiên sản phẩm có discount_percent cao trong ngân sách 20 triệu.",
+    "user_input": "Tôi có 20 triệu. Hãy chọn laptop, chuột và bàn phím đang được giảm giá nhiều nhất mà vẫn còn hàng.",
+    "budget": 20000000,
+    "required_categories": ["laptop", "mouse", "keyboard"],
+    "mock_data_subset": ["L0029", "L0013", "L0028", "M0017", "M0026", "K0022", "K0012"],
+    "expected_tool_calls": [
+      { "tool": "get_price", "args": { "item": "laptop" } },
+      { "tool": "get_price", "args": { "item": "mouse" } },
+      { "tool": "get_price", "args": { "item": "keyboard" } },
+      { "tool": "calculate_total", "args": { "items": ["L0029", "M0026", "K0022"] } },
+      { "tool": "optimize_budget", "args": { "budget": 20000000 } }
+    ],
+    "expected_reasoning_steps": [
+      "Lọc sản phẩm còn hàng (stock > 0) cho cả 3 danh mục",
+      "Laptop discount cao nhất còn hàng: L0029 (9%), L0013 (7%), L0028 (6%)",
+      "L0029 còn hàng (stock=7), giá sau giảm: 21.812.000 * 0.91 = 19.848.920",
+      "Nếu chọn L0029: ngân sách còn lại = 20.000.000 - 19.848.920 = 151.080",
+      "Mouse + keyboard không đủ trong 151.080 → thử L0013",
+      "L0013: 10.804.000 * 0.93 = 10.047.720; còn lại 9.952.280 cho mouse + keyboard",
+      "Mouse discount cao: M0026 (7%, còn hàng) = 621.000 * 0.93 = 577.530",
+      "Keyboard discount cao: K0022 (8%, còn hàng) = 2.730.000 * 0.92 = 2.511.600",
+      "Tổng = 10.047.720 + 577.530 + 2.511.600 = 13.136.850 <= 20tr ✓"
+    ],
+    "expected_output": {
+      "feasible": true,
+      "recommended_combo": [
+        { "id": "L0013", "name": "HP 245 Office", "discount_percent": 7, "price_after_discount": 10047720 },
+        { "id": "K0022", "name": "Keychron K2 V2", "discount_percent": 8, "price_after_discount": 2511600 },
+        { "id": "M0026", "name": "Razer Essential Lite", "discount_percent": 7, "price_after_discount": 577530 }
+      ],
+      "total_cost": 13136850,
+      "remaining_budget": 6863150,
+      "note": "L0029 có discount cao hơn nhưng không đủ ngân sách cho mouse + keyboard"
+    },
+    "evaluation_criteria": [
+      "Agent có hiểu 'giảm giá nhiều nhất' là ưu tiên discount_percent không?",
+      "Agent có kiểm tra tính khả thi của toàn bộ combo sau khi chọn laptop discount cao nhất không?",
+      "Agent có fallback sang lựa chọn tốt thứ 2 khi tổ hợp đầu không khả thi không?"
+    ]
+  },
+  {
+    "test_id": "TC007",
+    "title": "Ngân sách dư nhiều – Agent đề xuất nâng cấp",
+    "description": "Người dùng có 30 triệu, agent tìm combo tốt nhất và chủ động đề xuất nâng cấp với ngân sách dư.",
+    "user_input": "Tôi có 30 triệu để mua laptop, chuột và bàn phím. Hãy lên kế hoạch tốt nhất cho tôi.",
+    "budget": 30000000,
+    "required_categories": ["laptop", "mouse", "keyboard"],
+    "mock_data_subset": ["L0029", "L0030", "L0024", "L0020", "M0007", "M0014", "K0022", "K0025"],
+    "expected_tool_calls": [
+      { "tool": "get_price", "args": { "item": "laptop" } },
+      { "tool": "get_price", "args": { "item": "mouse" } },
+      { "tool": "get_price", "args": { "item": "keyboard" } },
+      { "tool": "calculate_total", "args": { "items": ["L0029", "M0007", "K0025"] } },
+      { "tool": "optimize_budget", "args": { "budget": 30000000 } }
+    ],
+    "expected_reasoning_steps": [
+      "Ngân sách 30 triệu rất rộng rãi",
+      "Laptop performance cao nhất còn hàng: L0029 (score=92), L0030 (score=83), L0024 (score=78)",
+      "L0029: 21.812.000 * 0.91 = 19.848.920 – score 92, còn 10.151.080",
+      "Mouse tốt nhất: M0007 Razer Essential Lite (score=30), giá 684.000",
+      "Keyboard tốt nhất còn lại: K0025 (score=53), giá sau giảm 3.105.940",
+      "Tổng: 19.848.920 + 684.000 + 3.105.940 = 23.638.860; score = 92+30+53 = 175",
+      "Còn dư: 30.000.000 - 23.638.860 = 6.361.140 → đề xuất phụ kiện hoặc nâng cấp"
+    ],
+    "expected_output": {
+      "feasible": true,
+      "recommended_combo": [
+        { "id": "L0029", "name": "Gigabyte G5 SE", "price_after_discount": 19848920, "performance_score": 92 },
+        { "id": "K0025", "name": "Keychron K2 2024", "price_after_discount": 3105940, "performance_score": 53 },
+        { "id": "M0007", "name": "Razer Essential Lite", "price_after_discount": 684000, "performance_score": 30 }
+      ],
+      "total_cost": 23638860,
+      "remaining_budget": 6361140,
+      "total_performance_score": 175,
+      "upsell_suggestion": "Còn dư 6.361.140 VNĐ – có thể xem xét thêm màn hình, tai nghe, hoặc nâng cấp chuột gaming cao cấp hơn."
+    },
+    "evaluation_criteria": [
+      "Agent có ưu tiên performance_score cao nhất khi ngân sách rộng rãi không?",
+      "Agent có thông báo số tiền dư và đề xuất sử dụng không?",
+      "Agent có trình bày tổng performance_score của toàn bộ combo không?"
+    ]
+  },
+  {
+    "test_id": "TC008",
+    "title": "Ràng buộc thương hiệu – chỉ mua Logitech và HP",
+    "description": "Người dùng muốn mua sản phẩm từ thương hiệu cụ thể. Agent phải lọc theo thương hiệu và tối ưu trong tập con đó.",
+    "user_input": "Tôi có 12 triệu. Chỉ mua sản phẩm của Logitech (chuột, bàn phím) và HP (laptop) thôi nhé.",
+    "budget": 12000000,
+    "required_categories": ["laptop", "mouse", "keyboard"],
+    "brand_constraints": {
+      "laptop": "HP",
+      "mouse": "Logitech",
+      "keyboard": "Logitech"
+    },
+    "mock_data_subset": ["L0003", "L0006", "L0011", "L0013", "M0004", "M0008", "M0010", "M0014", "M0016", "M0017", "K0009"],
+    "expected_tool_calls": [
+      { "tool": "get_price", "args": { "item": "HP laptop" } },
+      { "tool": "get_price", "args": { "item": "Logitech mouse" } },
+      { "tool": "get_price", "args": { "item": "Logitech keyboard" } },
+      { "tool": "calculate_total", "args": { "items": ["L0011", "M0014", "K0009"] } },
+      { "tool": "optimize_budget", "args": { "budget": 12000000 } }
+    ],
+    "expected_reasoning_steps": [
+      "Lọc laptop HP còn hàng: L0003 (stock=8), L0011 (stock=12), L0013 (stock=3)",
+      "Lọc mouse Logitech còn hàng: M0008 (stock=15), M0010 (không phải Logitech), M0014 (stock=3), M0016 (stock=5)",
+      "Keyboard Logitech còn hàng: K0009 (stock=2)",
+      "Chỉ có 1 keyboard Logitech: K0009 = 290.000 * 0.99 = 287.100",
+      "Tối ưu laptop HP + mouse Logitech trong 12tr - 287.100 = 11.712.900",
+      "L0013 (score=93): 10.804.000 * 0.93 = 10.047.720; còn 1.665.180 cho mouse",
+      "M0014 (score=44): 542.000 * 0.96 = 520.320 <= 1.665.180 ✓",
+      "Tổng = 10.047.720 + 520.320 + 287.100 = 10.855.140"
+    ],
+    "expected_output": {
+      "feasible": true,
+      "brand_filter_applied": {
+        "laptop": "HP",
+        "mouse": "Logitech",
+        "keyboard": "Logitech"
+      },
+      "recommended_combo": [
+        { "id": "L0013", "name": "HP 245 Office", "price_after_discount": 10047720, "performance_score": 93 },
+        { "id": "M0014", "name": "Logitech M331 2024", "price_after_discount": 520320, "performance_score": 44 },
+        { "id": "K0009", "name": "Logitech K120 V1", "price_after_discount": 287100, "performance_score": 37 }
+      ],
+      "total_cost": 10855140,
+      "remaining_budget": 1144860,
+      "total_performance_score": 174,
+      "note": "Chỉ có 1 bàn phím Logitech còn hàng trong hệ thống: K0009"
+    },
+    "evaluation_criteria": [
+      "Agent có áp dụng bộ lọc thương hiệu trước khi tối ưu không?",
+      "Agent có thông báo khi số lựa chọn bị hạn chế do ràng buộc thương hiệu không?",
+      "Agent có tối ưu performance_score trong tập sản phẩm đã lọc không?"
+    ]
+  }
+]
