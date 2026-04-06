@@ -78,6 +78,22 @@ def calculate_total(item_ids: list) -> dict:
 
     return result
 
+def check_discount(product_name: str) -> str:
+    """
+    check product name and and return discount
+    """
+    try:
+        with open("products_mockdata.json", 'r', encoding='utf-8') as file:
+            products = json.load(file)  
+            for product in products:
+                if product["name"] == product_name:
+                    print(product["discount_percent"])
+                    return product["discount_percent"]
+
+            return "product not found"
+    except FileNotFoundError:
+        print("wrong file")
+
 
 # ================= TEST =================
 if __name__ == "__main__":
@@ -86,3 +102,5 @@ if __name__ == "__main__":
 
     print("\n=== PRICE ===")
     print(get_price("Akko 3068"))
+
+    print(f"There is a {check_discount('Akko 3068 Pro')}% discount for Akko 3068 Pro")

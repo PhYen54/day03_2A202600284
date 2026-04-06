@@ -53,4 +53,21 @@ TOOLS = [
             }
         }
     }
+  {
+        "type": "function",
+        "function": {
+            "name": "check_discount",
+            "description": "check product name and and return discount",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_name": {
+                        "type": "string",
+                        "description": "Name of the product to get price"
+                    }
+                },
+                "required": ["product_name"]
+            }
+        }
+    } 
 ]
