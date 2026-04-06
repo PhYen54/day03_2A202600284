@@ -52,7 +52,7 @@ TOOLS = [
                 "required": ["item_ids"]
             }
         }
-    }
+    },
   {
         "type": "function",
         "function": {
